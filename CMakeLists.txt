@@ -19,6 +19,8 @@ function(yinamp_configure target)
     target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/src")
     target_compile_definitions(${target} PUBLIC UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX
                               WINVER=0x0A00 _WIN32_WINNT=0x0A00 NTDDI_VERSION=0x0A00000C)
+    # C++/WinRT otherwise embeds absolute calling-source paths in Release HRESULT diagnostics.
+    target_compile_definitions(${target} PUBLIC $<$<CONFIG:Release>:WINRT_NO_SOURCE_LOCATION>)
     target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8 /EHsc /Zc:__cplusplus)
     get_target_property(target_type ${target} TYPE)
     if(target_type STREQUAL "EXECUTABLE")
