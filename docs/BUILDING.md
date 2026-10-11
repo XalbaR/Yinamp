@@ -46,8 +46,17 @@ The old `build/windows-x64` tree and `windows-x64` / `debug-x64` presets are obs
 
 The MIT-licensed Classic skin is included under `assets/skins/classic`. Startup and skin-dependent tests use these loose BMP atlases and PLEDIT.TXT without extra setup. `.wsz` loading is absent. The [skin README](../assets/skins/classic/README.md) documents atlas dimensions; see [third-party notices](../THIRD_PARTY_NOTICES.md) for the current MIT status.
 
-The application prefers adjacent `assets/skins/classic` when an `assets` directory exists beside the executable, otherwise it uses the configured source directory. An optional compatible external atlas directory may be selected with `-DYINAMP_SKIN_DIRECTORY=<directory>`. Generated build headers contain resolved paths; distribute source archives separately from build caches.
+Release always loads `assets/skins/classic` relative to the executable, independent of the current working directory. Debug prefers adjacent assets when present and otherwise uses the configured source directory. `-DYINAMP_SKIN_DIRECTORY=<directory>` selects that Debug/test fallback; the fallback is compiled out of Release.
 
 ## Distribution
 
-Source version is currently 0.1.0. A public binary release and its version are a separate maintainer decision. No installer or binary packaging target is currently configured; do not use older packages as installation instructions.
+Build the portable 0.1.0 app in its separate Release tree:
+
+```powershell
+cmake --preset windows-x64-release
+cmake --build --preset release-app-x64
+```
+
+The preset uses Visual Studio 2022 x64, `BUILD_TESTING=OFF` and the static MSVC runtime (`/MT`). `/W4 /WX` remains enabled. The executable and bundled skin are placed in `build/windows-x64-release/Release`. Debug app/test/interactive presets retain their runtime settings and separate build trees.
+
+The public ZIP contains the executable, required Classic skin assets and license/notices. It needs Windows 10 22H2 or Windows 11 x64 with Media Foundation (Media Feature Pack on N editions), but no separate VC++ Redistributable. User data still uses the Windows known folders described in [Storage](STORAGE.md). No installer or updater is provided.

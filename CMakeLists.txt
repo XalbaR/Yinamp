@@ -19,6 +19,8 @@ function(yinamp_configure target)
     target_include_directories(${target} PUBLIC "${PROJECT_SOURCE_DIR}/src")
     target_compile_definitions(${target} PUBLIC UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX
                               WINVER=0x0A00 _WIN32_WINNT=0x0A00 NTDDI_VERSION=0x0A00000C)
+    # C++/WinRT otherwise embeds absolute calling-source paths in Release HRESULT diagnostics.
+    target_compile_definitions(${target} PUBLIC $<$<CONFIG:Release>:WINRT_NO_SOURCE_LOCATION>)
     target_compile_options(${target} PRIVATE /W4 /WX /permissive- /utf-8 /EHsc /Zc:__cplusplus)
     get_target_property(target_type ${target} TYPE)
     if(target_type STREQUAL "EXECUTABLE")
@@ -80,8 +82,14 @@ yinamp_configure(Yinamp)
 target_include_directories(Yinamp PRIVATE "${PROJECT_BINARY_DIR}/generated")
 target_link_libraries(Yinamp PRIVATE yinamp_ui)
 
-# A public binary release is a separate maintainer decision.
-# No binary install/CPack target is currently configured.
+# Keep portable app assets next to the Release executable. Debug retains its source fallback.
+if(CMAKE_CONFIGURATION_TYPES STREQUAL "Release")
+    add_custom_command(TARGET Yinamp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/assets/skins/classic"
+            "$<TARGET_FILE_DIR:Yinamp>/assets/skins/classic"
+        COMMENT "Copy bundled Classic skin beside Yinamp")
+endif()
 
 if(BUILD_TESTING)
     add_executable(yinamp_classic_popup_tests tests/ClassicPopupMenuTests.cpp src/app/Yinamp.manifest)
