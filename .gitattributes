@@ -1,0 +1,9 @@
+# Keep text diffs consistent across Windows checkouts.
+* text=auto
+*.bmp binary
+*.BMP binary
+*.cur binary
+*.CUR binary
+*.ico binary
+*.png binary
+assets/skins/classic/** -text -diff

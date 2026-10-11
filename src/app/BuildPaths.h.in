@@ -1,0 +1,6 @@
+#pragma once
+#include <string_view>
+
+namespace yinamp::app {
+inline constexpr std::wstring_view DefaultSkinDirectory = LR"yinamp(@YINAMP_SKIN_DIRECTORY@)yinamp";
+}

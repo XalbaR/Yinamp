@@ -1,0 +1,61 @@
+name: Bug report
+description: Report a reproducible Yinamp problem.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: "For vulnerabilities, follow SECURITY.md. Remove personal paths, media history, private URLs and credentials from logs or screenshots."
+  - type: input
+    id: revision
+    attributes:
+      label: Revision
+      description: Commit SHA or version, and whether this is a Debug source build.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Windows and toolchain
+      description: Windows version, x64, relevant codec/audio device and compiler/CMake versions.
+    validations:
+      required: true
+  - type: dropdown
+    id: playback_mode
+    attributes:
+      label: Playback mode
+      options:
+        - Download/Local
+        - Online/Stream
+        - Not applicable
+    validations:
+      required: true
+  - type: dropdown
+    id: source_type
+    attributes:
+      label: Source type
+      options:
+        - Local audio/video file
+        - YouTube video
+        - Public YouTube playlist
+        - TXT URL list
+        - Not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include mode and relevant settings. Use synthetic or redistributable input.
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized diagnostics
+      description: Optional logs, test failures or clean screenshots. Do not upload unlicensed skins/media.

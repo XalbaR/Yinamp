@@ -1,0 +1,2 @@
+#include "resource.h"
+IDI_YINAMP ICON "assets/icon/Yinamp.ico"

@@ -1,0 +1,23 @@
+name: Feature request
+description: Describe a user problem and proposed improvement.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What task is difficult today? Check the documented limitations first.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the result and any alternatives considered.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Dependencies and constraints
+      description: Optional platform, compatibility, privacy and asset licensing considerations.
