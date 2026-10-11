@@ -18,7 +18,8 @@ RECT WindowBounds(HWND window) {
 MainWindow::MainWindow(HINSTANCE instance, skin::SkinAssets assets, graphics::Renderer& renderer,
                        core::IntegerScale scale, std::optional<std::filesystem::path> mediaRoot, bool enableMediaJobs,
                        media::MediaRunner mediaRunner, std::optional<std::filesystem::path> sessionRoot,
-                       media::MediaRunner metadataRunner, platform::TrayIcon::Notify trayNotify, ClassicPopupMenu::Opened popupOpened)
+                       media::MediaRunner metadataRunner, platform::TrayIcon::Notify trayNotify, ClassicPopupMenu::Opened popupOpened,
+                       std::shared_ptr<media::playback::AudioOutput> audioOutput)
     : assets_(std::move(assets)), renderer_(renderer), positionRoot_(sessionRoot), mediaRoot_(mediaRoot), playbackSettings_(sessionRoot), window_(instance, true),
       popupOpened_(std::move(popupOpened)) {
     if (scale.Value() != 1)
@@ -32,7 +33,8 @@ MainWindow::MainWindow(HINSTANCE instance, skin::SkinAssets assets, graphics::Re
                                                enableMediaJobs, std::move(mediaRunner), std::move(sessionRoot), playbackSettings_.Mode(),
                                                std::move(metadataRunner));
     video_ = std::make_unique<VideoWindow>(instance, window_.Handle(), assets_);
-    playbackSession_ = std::make_unique<media::playback::PlaybackSession>(video_->Handle());
+    audioOutput_ = std::move(audioOutput);
+    playbackSession_ = std::make_unique<media::playback::PlaybackSession>(video_->Handle(), true, true, audioOutput_);
     playback_ = std::make_unique<media::playback::PlaybackController>(playlist_->Model(), *playbackSession_, mediaRoot);
     playback_->SetPlaybackMode(playbackSettings_.Mode());
     equalizer_->settingsChanged = [this](bool enabled, const std::array<int, 11>& values) {
@@ -405,7 +407,7 @@ void MainWindow::ConfirmContentReset() {
         video_->Detach();
         playbackSession_->Shutdown();
         playbackSession_.reset();
-        playbackSession_ = std::make_unique<media::playback::PlaybackSession>(video_->Handle());
+        playbackSession_ = std::make_unique<media::playback::PlaybackSession>(video_->Handle(), true, true, audioOutput_);
         playback_ = std::make_unique<media::playback::PlaybackController>(playlist_->Model(), *playbackSession_, mediaRoot_);
         playback_->SetPlaybackMode(playbackSettings_.Mode());
         playbackSession_->Equalizer(equalizer_->State().on, equalizer_->State().values);

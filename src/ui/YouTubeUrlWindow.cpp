@@ -22,8 +22,9 @@ YouTubeUrlWindow::YouTubeUrlWindow(HINSTANCE instance, HWND owner, const skin::S
                                    media::native::PlaylistHttpTransport transport,
                                    std::optional<std::filesystem::path> cacheRoot,
                                    std::optional<std::uint64_t> renameEntryId,
-                                   std::optional<DisplayNameTarget> displayNameTarget)
-    : assets_(assets), scale_(scale), model_(model), owner_(owner), playlistTransport_(std::move(transport)),
+                                   std::optional<DisplayNameTarget> displayNameTarget,
+                                   std::shared_ptr<graphics::Bitmap> capture)
+    : assets_(assets), scale_(scale), model_(model), owner_(owner), renderer_(std::move(capture)), playlistTransport_(std::move(transport)),
       window_(instance) {
     cacheRoot_ = std::move(cacheRoot);
     renameEntryId_ = renameEntryId;

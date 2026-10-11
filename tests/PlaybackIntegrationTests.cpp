@@ -1,3 +1,4 @@
+#include "PlaybackOutput.h"
 #include "HttpRangeFixture.h"
 #include "TemporaryMediaRoot.h"
 #include "media/playback/PlaybackSession.h"
@@ -161,6 +162,7 @@ media::playback::Snapshot Wait(media::playback::PlaybackSession& session, media:
 }
 int main() {
     try {
+        const auto output = yinamp::test::PlaybackOutput();
         platform::ComApartment apartment;
         Hr(MFStartup(MF_VERSION));
         struct Shutdown {
@@ -215,7 +217,7 @@ int main() {
                 streams.audio.itag = 140;
                 return streams;
             };
-            media::playback::PlaybackSession session(window, false, false);
+            media::playback::PlaybackSession session(window, false, false, output);
             session.Audio(0, 0);
             session.OpenSource(online, 40);
             const auto ready = Wait(session, State::Stopped, 40);
@@ -258,7 +260,7 @@ int main() {
             Check(session.Read().state == State::Failed && resolves == beforeFailure + 2, "persistent expiry has bounded retry");
         }
         {
-            media::playback::PlaybackSession session(window, false);
+            media::playback::PlaybackSession session(window, false, true, output);
             session.Open(wav, 9);
             const auto audioReady = Wait(session, State::Stopped, 9);
             Check(!audioReady.video && audioReady.channels == 1 && !session.Display(),
@@ -309,6 +311,12 @@ int main() {
                 std::this_thread::sleep_for(std::chrono::milliseconds(20));
             }
             Check(energy, "muted real decoded sine activates expected band");
+            if (const auto fixture = std::dynamic_pointer_cast<yinamp::test::AudioOutput>(output)) {
+                Check(fixture->RenderedSamples() > 0, "Clock-scheduled output consumes real decoded audio samples");
+                const auto levels = fixture->Levels();
+                Check(!levels.empty() && std::ranges::all_of(levels, [](float gain) { return gain == 0.0f; }),
+                      "Session applies mute to the injected output volume service");
+            }
             session.Close(); Wait(session, State::Closed, 0);
             // Same generated decoded tone, attenuated by real preamp upstream of the scheduled tap.
             std::array<int, 11> curve{}; curve[0] = -120;
@@ -386,7 +394,7 @@ int main() {
         // Format reporting must work with and without the optional spectrum branch,
         // and be replaced even when opening a new source without an explicit Close.
         for (bool spectrum : {false, true}) {
-            media::playback::PlaybackSession session(window, false, spectrum);
+            media::playback::PlaybackSession session(window, false, spectrum, output);
             session.Open(wav, 20);
             Check(Wait(session, State::Stopped, 20).channels == 1, "negotiated mono independent of spectrum");
             session.Open(stereo, 21);

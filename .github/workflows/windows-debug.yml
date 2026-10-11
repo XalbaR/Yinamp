@@ -31,6 +31,7 @@ jobs:
           if ($configure.architecture -ne 'x64' -or
               $configure.cacheVariables.CMAKE_CONFIGURATION_TYPES -ne 'Debug' -or
               $configure.cacheVariables.BUILD_TESTING -ne 'ON' -or
+              $configure.cacheVariables.YINAMP_INTERACTIVE_VALIDATION -ne 'OFF' -or
               $build.configurePreset -ne 'windows-x64-tests' -or
               $test.configurePreset -ne 'windows-x64-tests' -or
               $build.configuration -ne 'Debug' -or $test.configuration -ne 'Debug') {
@@ -41,4 +42,4 @@ jobs:
       - name: Build Debug x64
         run: cmake --build --preset debug-tests-x64
       - name: Run offline Debug CTest
-        run: ctest --preset debug-tests-x64 --no-tests=error
+        run: ctest --preset debug-tests-x64 --no-tests=error --verbose

@@ -20,7 +20,8 @@ class MainWindow final {
                std::optional<std::filesystem::path> mediaRoot = {}, bool enableMediaJobs = true,
                media::MediaRunner mediaRunner = {}, std::optional<std::filesystem::path> sessionRoot = {},
                media::MediaRunner metadataRunner = {}, platform::TrayIcon::Notify trayNotify = {},
-               ClassicPopupMenu::Opened popupOpened = {});
+               ClassicPopupMenu::Opened popupOpened = {},
+               std::shared_ptr<media::playback::AudioOutput> audioOutput = {});
     ~MainWindow();
     int Run(int showCommand);
     void ConfirmContentReset();
@@ -81,6 +82,7 @@ class MainWindow final {
     std::unique_ptr<PlaylistWindow> playlist_;
     std::unique_ptr<VideoWindow> video_;
     std::unique_ptr<LibraryWindow> library_;
+    std::shared_ptr<media::playback::AudioOutput> audioOutput_;
     std::unique_ptr<media::playback::PlaybackSession> playbackSession_;
     std::unique_ptr<media::playback::PlaybackController> playback_;
     media::playback::VideoPolicy videoPolicy_;

@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "TemporaryMediaRoot.h"
 #include "playlist/PlaylistSessionStore.h"
 #include "playlist/PlaylistFile.h"
@@ -22,6 +23,7 @@ void Write(const std::filesystem::path& path, std::string_view bytes) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         const auto mediaRoot = temporary.path / L"media";

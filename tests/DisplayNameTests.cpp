@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "TemporaryMediaRoot.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -19,35 +20,6 @@ void Write(const std::filesystem::path& path, std::string_view bytes) {
     std::ofstream(path, std::ios::binary) << bytes;
 }
 constexpr wchar_t Url[] = L"https://youtu.be/dQw4w9WgXcQ";
-void Snapshot(HWND hwnd, int scale) {
-    RECT rect{};
-    GetClientRect(hwnd, &rect);
-    const int width = rect.right, height = rect.bottom;
-    const auto dc = GetDC(hwnd), copy = CreateCompatibleDC(dc);
-    const auto bitmap = CreateCompatibleBitmap(dc, width, height);
-    const auto old = SelectObject(copy, bitmap);
-    BitBlt(copy, 0, 0, width, height, dc, 0, 0, SRCCOPY);
-    SelectObject(copy, old);
-    BITMAPINFO info{};
-    info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    info.bmiHeader.biWidth = width;
-    info.bmiHeader.biHeight = -height;
-    info.bmiHeader.biPlanes = 1;
-    info.bmiHeader.biBitCount = 32;
-    std::vector<std::uint8_t> pixels(static_cast<std::size_t>(width * height * 4));
-    GetDIBits(copy, bitmap, 0, static_cast<UINT>(height), pixels.data(), &info, DIB_RGB_COLORS);
-    BITMAPFILEHEADER header{};
-    header.bfType = 0x4D42;
-    header.bfOffBits = sizeof(header) + sizeof(info.bmiHeader);
-    header.bfSize = header.bfOffBits + static_cast<DWORD>(pixels.size());
-    std::ofstream file("rename-" + std::to_string(scale) + "x.bmp", std::ios::binary);
-    file.write(reinterpret_cast<const char*>(&header), sizeof(header));
-    file.write(reinterpret_cast<const char*>(&info.bmiHeader), sizeof(info.bmiHeader));
-    file.write(reinterpret_cast<const char*>(pixels.data()), static_cast<std::streamsize>(pixels.size()));
-    DeleteObject(bitmap);
-    DeleteDC(copy);
-    ReleaseDC(hwnd, dc);
-}
 void Persistence(const std::filesystem::path& root) {
     const auto mediaRoot = root / L"media";
     playlist::PlaylistSessionStore session(root / L"session");
@@ -127,6 +99,8 @@ struct Scenario {
     bool sawMenu{};
     bool sawDialog{};
     std::exception_ptr failure;
+    std::shared_ptr<graphics::Bitmap> capture;
+    const skin::SkinAssets* assets{};
 };
 BOOL CALLBACK FindDialog(HWND window, LPARAM data) {
     wchar_t title[32]{};
@@ -158,15 +132,23 @@ void CALLBACK Drive(HWND hwnd, UINT, UINT_PTR timer, DWORD) noexcept {
         GetClientRect(test.dialog, &bounds);
         Check(bounds.right == 275 * test.scale && bounds.bottom == 76 * test.scale,
               "Rename uses Add URL dimensions at 1x/2x");
-        if (test.mode == 0) {
+        if (test.mode == 0 && !test.menu) {
+            InvalidateRect(test.dialog, nullptr, FALSE);
             UpdateWindow(test.dialog);
-            const auto dc = GetDC(test.dialog);
-            const auto labelBackground = GetPixel(dc, 250 * test.scale, 44 * test.scale);
-            const auto buttonBackground = GetPixel(dc, 234 * test.scale, 37 * test.scale);
-            ReleaseDC(test.dialog, dc);
-            Check(labelBackground != CLR_INVALID && labelBackground == buttonBackground,
-                  "SAVE label keeps the button background at 1x/2x");
-            Snapshot(test.dialog, test.scale);
+            Check(test.capture && !test.capture->pixels.empty(), "Offscreen rename frame rendered");
+            const auto pixel = [&](int x, int y) {
+                const auto offset = static_cast<std::size_t>((y * test.scale * test.capture->size.width + x * test.scale) * 4);
+                const auto& pixels = test.capture->pixels;
+                return static_cast<unsigned>(pixels.at(offset)) | (static_cast<unsigned>(pixels.at(offset + 1)) << 8) |
+                       (static_cast<unsigned>(pixels.at(offset + 2)) << 16);
+            };
+            const auto label = skin::PlaylistMenuSource(skin::PlaylistControl::List, 1, false);
+            const auto atlas = test.assets->Get(skin::AssetId::Playlist);
+            const auto offset = static_cast<std::size_t>(((label.y + 3) * atlas->size.width + label.x + 2) * 4);
+            const auto expected = static_cast<unsigned>(atlas->pixels.at(offset)) |
+                (static_cast<unsigned>(atlas->pixels.at(offset + 1)) << 8) |
+                (static_cast<unsigned>(atlas->pixels.at(offset + 2)) << 16);
+            Check(pixel(250, 44) == expected && pixel(234, 37) == expected, "SAVE label keeps the button background at 1x/2x");
         }
         if (test.mode == 2 && test.ticks == 1) {
             SetWindowTextW(edit, L"   ");
@@ -203,9 +185,12 @@ void Dialogs(const std::filesystem::path& root) {
             auto& model = main.Playlist().Model();
             model.Clear();
             model.Add("Original title");
+            auto capture = std::make_shared<graphics::Bitmap>();
             ui::YouTubeUrlWindow dialog(GetModuleHandleW(nullptr), owner, assets, core::IntegerScale{scale}, model, {},
-                                        {}, model.entries[0].id);
+                                        {}, model.entries[0].id, {}, capture);
             Scenario scenario{dialog.Handle(), mode, scale};
+            scenario.capture = capture;
+            scenario.assets = &assets;
             SetPropW(owner, L"DisplayNameTest", &scenario);
             SetTimer(owner, 91, 50, Drive);
             const auto saved = dialog.Run();
@@ -240,6 +225,7 @@ void Dialogs(const std::filesystem::path& root) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         yinamp::platform::ComApartment apartment;
         TemporaryMediaRoot root;
         Persistence(root.path);

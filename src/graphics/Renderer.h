@@ -12,7 +12,7 @@ enum class FrameResult {
 };
 class Renderer final {
   public:
-    Renderer();
+    explicit Renderer(std::shared_ptr<Bitmap> capture = {});
     Renderer(const Renderer&) = delete;
     Renderer& operator=(const Renderer&) = delete;
     void Begin(HWND window, core::IntegerScale scale);
@@ -31,7 +31,9 @@ class Renderer final {
   private:
     Microsoft::WRL::ComPtr<ID2D1Factory> factory_;
     Microsoft::WRL::ComPtr<IDWriteFactory> textFactory_;
-    Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> target_;
+    Microsoft::WRL::ComPtr<ID2D1RenderTarget> target_;
+    Microsoft::WRL::ComPtr<IWICBitmap> captureBitmap_;
+    std::shared_ptr<Bitmap> capture_;
     Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> solidBrush_;
     // Anahtarlar CPU bitmaplerini yaşatır; GPU kaynakları hedefle birlikte topluca bırakılır.
     std::unordered_map<BitmapHandle, Microsoft::WRL::ComPtr<ID2D1Bitmap>> bitmaps_;

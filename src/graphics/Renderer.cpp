@@ -9,7 +9,7 @@ D2D1_RECT_F ToFloat(core::Rect rect) {
                        static_cast<float>(rect.y + rect.height));
 }
 }
-Renderer::Renderer() {
+Renderer::Renderer(std::shared_ptr<Bitmap> capture) : capture_(std::move(capture)) {
     platform::CheckHResult(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, factory_.GetAddressOf()),
                            "Direct2D factory initialization");
     platform::CheckHResult(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory),
@@ -67,22 +67,35 @@ void Renderer::Begin(HWND window, core::IntegerScale scale) {
         throw std::runtime_error("GetClientRect failed.");
     }
     const auto size = D2D1::SizeU(static_cast<UINT32>(client.right), static_cast<UINT32>(client.bottom));
-    if (!target_) {
-        platform::CheckHResult(
-            factory_->CreateHwndRenderTarget(
-                D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
-                                             D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
-                                             96.0F, 96.0F),
-                D2D1::HwndRenderTargetProperties(window, size), target_.GetAddressOf()),
-            "Direct2D target creation");
+    if (capture_) {
+        if (!target_ || capture_->size.width != client.right || capture_->size.height != client.bottom) {
+            DiscardDeviceResources();
+            Microsoft::WRL::ComPtr<IWICImagingFactory> wic;
+            platform::CheckHResult(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
+                                                    IID_PPV_ARGS(&wic)), "Offscreen WIC factory");
+            platform::CheckHResult(wic->CreateBitmap(size.width, size.height, GUID_WICPixelFormat32bppBGR,
+                                                    WICBitmapCacheOnLoad, &captureBitmap_), "Offscreen bitmap");
+            platform::CheckHResult(factory_->CreateWicBitmapRenderTarget(captureBitmap_.Get(),
+                D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_SOFTWARE,
+                    D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 96.0F, 96.0F),
+                &target_), "Offscreen Direct2D target");
+            capture_->size = {client.right, client.bottom};
+        }
+    } else if (!target_) {
+        Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> hwndTarget;
+        platform::CheckHResult(factory_->CreateHwndRenderTarget(
+            D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_DEFAULT,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE), 96.0F, 96.0F),
+            D2D1::HwndRenderTargetProperties(window, size), &hwndTarget), "Direct2D target creation");
+        target_ = hwndTarget;
     } else {
         const auto current = target_->GetPixelSize();
         if (current.width != size.width || current.height != size.height) {
-            const HRESULT result = target_->Resize(size);
+            Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> hwndTarget;
+            platform::CheckHResult(target_.As(&hwndTarget), "HWND render target");
+            const HRESULT result = hwndTarget->Resize(size);
             if (result == D2DERR_RECREATE_TARGET) {
-                DiscardDeviceResources();
-                Begin(window, scale);
-                return;
+                DiscardDeviceResources(); Begin(window, scale); return;
             }
             platform::CheckHResult(result, "Direct2D target resize");
         }
@@ -107,6 +120,12 @@ FrameResult Renderer::End() {
         return FrameResult::RecreateRequired;
     }
     platform::CheckHResult(result, "Direct2D EndDraw");
+    if (capture_) {
+        const auto stride = static_cast<UINT>(capture_->size.width * 4);
+        capture_->pixels.resize(static_cast<std::size_t>(stride) * capture_->size.height);
+        platform::CheckHResult(captureBitmap_->CopyPixels(nullptr, stride,
+            static_cast<UINT>(capture_->pixels.size()), capture_->pixels.data()), "Offscreen rendered pixels");
+    }
     return FrameResult::Complete;
 }
 void Renderer::Draw(const BitmapHandle& bitmap, core::Rect source, core::Rect destination) {
@@ -143,6 +162,7 @@ void Renderer::DiscardDeviceResources() noexcept {
     bitmaps_.clear();
     solidBrush_.Reset();
     target_.Reset();
+    captureBitmap_.Reset();
 }
 void Renderer::Fill(const BitmapHandle& pixel, core::Rect destination) {
     if (!pixel || pixel->size.width != 1 || pixel->size.height != 1 || destination.width <= 0 ||

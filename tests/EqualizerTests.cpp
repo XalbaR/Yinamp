@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
 #include "skin/EqualizerRenderer.h"
@@ -27,6 +28,7 @@ void Size(HWND window, int factor, int height = 116) {
 } // namespace
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         using namespace yinamp;
         Check(skin::EqualizerSize.width == 275 && skin::EqualizerSize.height == 116, "Classic EQ geometry");
         Check(skin::EqualizerBands == std::array<std::string_view, 10>{"60 Hz", "170 Hz", "310 Hz", "600 Hz", "1 kHz",

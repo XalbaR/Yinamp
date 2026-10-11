@@ -1,3 +1,5 @@
+#include "WindowFixture.h"
+#include "PlaybackOutput.h"
 #include "TemporaryMediaRoot.h"
 #include "VideoFixture.h"
 #include "app/BuildPaths.h"
@@ -497,7 +499,7 @@ void NativeWindow(const std::filesystem::path& root) {
     auto assets = skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader);
     graphics::Renderer renderer;
     ui::MainWindow main(GetModuleHandleW(nullptr), assets, renderer, core::IntegerScale(1), mediaRoot, false, {},
-                        root / L"session");
+                        root / L"session", {}, {}, {}, yinamp::test::PlaybackOutput());
     auto& library = main.Library();
     const auto menu = [&]() {
         SendMessageW(main.Handle(), WM_COMMAND, static_cast<UINT>(ui::ClassicCommand::Library), 0);
@@ -583,7 +585,7 @@ void Preview(const std::filesystem::path& destination, const std::filesystem::pa
     graphics::BitmapLoader loader;
     auto assets = skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader);
     graphics::Renderer renderer;
-    ui::MainWindow main(GetModuleHandleW(nullptr), assets, renderer, core::IntegerScale(1), {}, false, {}, sessionRoot);
+    ui::MainWindow main(GetModuleHandleW(nullptr), assets, renderer, core::IntegerScale(1), {}, false, {}, sessionRoot, {}, {}, {}, yinamp::test::PlaybackOutput());
     main.Library().Toggle();
     SetWindowPos(main.Library().Handle(), nullptr, 100, 100, 920, 520, SWP_NOZORDER | SWP_NOACTIVATE);
     Capture(main.Library().Handle(), destination);
@@ -593,6 +595,7 @@ void Preview(const std::filesystem::path& destination, const std::filesystem::pa
 }
 int wmain(int argc, wchar_t* argv[]) {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         if (argc == 3 && std::wstring_view(argv[1]) == L"--preview") {

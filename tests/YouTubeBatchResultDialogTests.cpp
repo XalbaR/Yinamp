@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "TemporaryMediaRoot.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -173,9 +174,7 @@ void Run(Dialog& dialog, Owners& owners, int scale, int mode, std::wstring expec
         IsWindowEnabled(owners.eq) == (mode != 6), "Owners restore original enabled state");
     if (mode == 6) EnableWindow(owners.eq, TRUE);
     if (mode == 7) {
-        MSG quit{};
-        Check(PeekMessageW(&quit, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE) && quit.wParam == 17,
-            "Modal preserves application quit code");
+        yinamp::test::RequireQuit(17);
     }
 }
 void Write(const std::filesystem::path& file, std::string_view bytes) {
@@ -185,6 +184,7 @@ void Write(const std::filesystem::path& file, std::string_view bytes) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         graphics::BitmapLoader loader;

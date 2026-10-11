@@ -1,3 +1,5 @@
+#include "WindowFixture.h"
+#include "PlaybackOutput.h"
 #include "TemporaryMediaRoot.h"
 #include "app/BuildPaths.h"
 #include "media/ContentReset.h"
@@ -142,7 +144,7 @@ void Native(const std::filesystem::path& root) {
                 Write(media / L"stopped.part");
                 joined = true;
             },
-            session);
+            session, {}, {}, {}, yinamp::test::PlaybackOutput());
         main.Playlist().Model().SubmitYouTubeUrl(L"https://youtu.be/aaaaaaaaaaa");
         SendMessageW(main.Playlist().Handle(), WM_TIMER, 0x1010, 0);
         for (int i = 0; i < 200 && !started; ++i)
@@ -198,7 +200,7 @@ void NativeShortcut(const std::filesystem::path& root) {
     auto assets = skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader);
     graphics::Renderer renderer;
     ui::MainWindow main(GetModuleHandleW(nullptr), assets, renderer, core::IntegerScale(1),
-                        root / L"shortcut/music/YINAMP", false, {}, root / L"shortcut/Yinamp");
+                        root / L"shortcut/music/YINAMP", false, {}, root / L"shortcut/Yinamp", {}, {}, {}, yinamp::test::PlaybackOutput());
     int confirmations{};
     main.contentResetConfirmation = [&](HWND, const std::wstring&) {
         ++confirmations;
@@ -231,7 +233,7 @@ void ClassicChoices(const std::filesystem::path& root) {
     auto assets = skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader);
     graphics::Renderer renderer;
     ui::MainWindow main(GetModuleHandleW(nullptr), assets, renderer, core::IntegerScale(1),
-                        root / L"choices/music/YINAMP", false, {}, root / L"choices/Yinamp");
+                        root / L"choices/music/YINAMP", false, {}, root / L"choices/Yinamp", {}, {}, {}, yinamp::test::PlaybackOutput());
     media::ContentReset plan(root / L"choices/Yinamp", root / L"choices/music/YINAMP");
     const auto click = [](HWND hwnd, core::Rect rect) {
         const auto position = MAKELPARAM(rect.x + 3, rect.y + 3);
@@ -262,6 +264,7 @@ void ClassicChoices(const std::filesystem::path& root) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         media::ContentResetChord chord;

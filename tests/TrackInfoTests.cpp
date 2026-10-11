@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "TemporaryMediaRoot.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -336,6 +337,7 @@ void Dialogs(const skin::SkinAssets& assets, const std::filesystem::path& root) 
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment runtime;
         TemporaryMediaRoot temporary;
         Data(temporary.path / L"media");

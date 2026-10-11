@@ -19,7 +19,8 @@ class YouTubeUrlWindow final {
                      playlist::PlaylistModel& model, media::native::PlaylistHttpTransport transport = {},
                      std::optional<std::filesystem::path> cacheRoot = {},
                      std::optional<std::uint64_t> renameEntryId = {},
-                     std::optional<DisplayNameTarget> displayNameTarget = {});
+                     std::optional<DisplayNameTarget> displayNameTarget = {},
+                     std::shared_ptr<graphics::Bitmap> capture = {});
     ~YouTubeUrlWindow();
     bool Run();
     HWND Handle() const noexcept {

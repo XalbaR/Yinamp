@@ -1,3 +1,5 @@
+#include "WindowFixture.h"
+#include "PlaybackOutput.h"
 #include "TemporaryMediaRoot.h"
 #include "VideoFixture.h"
 #include "app/BuildPaths.h"
@@ -133,6 +135,7 @@ void VideoToggle(yinamp::ui::MainWindow& main, const std::filesystem::path& root
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         using namespace yinamp;
         platform::ComApartment apartment;
         TemporaryMediaRoot temp;
@@ -160,7 +163,7 @@ int main() {
                 throw std::runtime_error("cancelled test job");
             };
             ui::MainWindow online(GetModuleHandleW(nullptr), skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader),
-                                  renderer, core::IntegerScale{1}, temp.path / L"online-store", true, runner, settingsRoot, metadataRunner);
+                                  renderer, core::IntegerScale{1}, temp.path / L"online-store", true, runner, settingsRoot, metadataRunner, {}, {}, yinamp::test::PlaybackOutput());
             online.Playlist().Model().QueueYouTubeUrl(L"https://youtu.be/AbCdEf012_-");
             SendMessageW(online.Playlist().Handle(), WM_TIMER, 0x1010, 0);
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -218,7 +221,7 @@ int main() {
                   "known title/duration avoids unnecessary network resolution");
         }
         ui::MainWindow main(GetModuleHandleW(nullptr), skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader),
-                            renderer, core::IntegerScale{1}, temp.path / L"store", false, {}, temp.path / L"session");
+                            renderer, core::IntegerScale{1}, temp.path / L"store", false, {}, temp.path / L"session", {}, {}, {}, yinamp::test::PlaybackOutput());
         auto& playlist = main.Playlist();
         VideoToggle(main, temp.path);
         const auto nativePlayItem = playlist.playItem;

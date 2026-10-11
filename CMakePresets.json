@@ -1,24 +1,77 @@
 {
   "version": 6,
-  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
-  "configurePresets": [{
-    "name": "windows-x64-app",
-    "displayName": "Visual Studio 2022 x64 Debug app",
-    "generator": "Visual Studio 17 2022",
-    "architecture": "x64",
-    "binaryDir": "${sourceDir}/build/windows-x64-app",
-    "cacheVariables": { "CMAKE_CONFIGURATION_TYPES": "Debug", "BUILD_TESTING": "OFF" }
-  }, {
-    "name": "windows-x64-tests",
-    "displayName": "Visual Studio 2022 x64 Debug tests",
-    "generator": "Visual Studio 17 2022",
-    "architecture": "x64",
-    "binaryDir": "${sourceDir}/build/windows-x64-tests",
-    "cacheVariables": { "CMAKE_CONFIGURATION_TYPES": "Debug", "BUILD_TESTING": "ON" }
-  }],
-  "buildPresets": [
-    { "name": "debug-app-x64", "configurePreset": "windows-x64-app", "configuration": "Debug" },
-    { "name": "debug-tests-x64", "configurePreset": "windows-x64-tests", "configuration": "Debug" }
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-x64-app",
+      "displayName": "Visual Studio 2022 x64 Debug app",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-x64-app",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug",
+        "BUILD_TESTING": "OFF"
+      }
+    },
+    {
+      "name": "windows-x64-tests",
+      "displayName": "Visual Studio 2022 x64 Debug tests",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-x64-tests",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug",
+        "BUILD_TESTING": "ON",
+        "YINAMP_INTERACTIVE_VALIDATION": "OFF"
+      }
+    },
+    {
+      "name": "windows-x64-interactive",
+      "displayName": "Visual Studio 2022 x64 Debug interactive validation",
+      "inherits": "windows-x64-tests",
+      "binaryDir": "${sourceDir}/build/windows-x64-interactive",
+      "cacheVariables": {
+        "YINAMP_INTERACTIVE_VALIDATION": "ON"
+      }
+    }
   ],
-  "testPresets": [{ "name": "debug-tests-x64", "configurePreset": "windows-x64-tests", "configuration": "Debug", "output": { "outputOnFailure": true } }]
+  "buildPresets": [
+    {
+      "name": "debug-app-x64",
+      "configurePreset": "windows-x64-app",
+      "configuration": "Debug"
+    },
+    {
+      "name": "debug-tests-x64",
+      "configurePreset": "windows-x64-tests",
+      "configuration": "Debug"
+    },
+    {
+      "name": "debug-interactive-x64",
+      "configurePreset": "windows-x64-interactive",
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "debug-tests-x64",
+      "configurePreset": "windows-x64-tests",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "debug-interactive-x64",
+      "configurePreset": "windows-x64-interactive",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
 }

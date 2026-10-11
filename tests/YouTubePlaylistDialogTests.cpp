@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "TemporaryMediaRoot.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -82,6 +83,7 @@ void CALLBACK Tick(HWND owner, UINT, UINT_PTR timer, DWORD) noexcept {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         const auto assets = skin::SkinLoader{}.Load(app::DefaultSkinDirectory, graphics::BitmapLoader{});

@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "platform/windows/dpi/Dpi.h"
 #include "platform/windows/windowing/Window.h"
 #include "ui/ClassicPopupMenu.h"
@@ -70,6 +71,7 @@ void RenderFixture(const ui::ClassicMenuItems& items) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::EnableDpiAwareness();
         using Item = ui::ClassicMenuItem;
         const ui::ClassicMenuItems items{Item::Item(L"Disabled", 99, false, false), Item::Separator(),

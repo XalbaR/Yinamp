@@ -1,5 +1,6 @@
 #pragma once
 #include "media/playback/PlaybackTypes.h"
+#include "media/playback/AudioOutput.h"
 #include "media/playback/AudioSpectrum.h"
 #include <Windows.h>
 #include <evr.h>
@@ -8,7 +9,8 @@
 namespace yinamp::media::playback {
 class PlaybackSession final : public Session {
   public:
-    explicit PlaybackSession(HWND videoWindow, bool autoStart = true, bool enableSpectrum = true);
+    explicit PlaybackSession(HWND videoWindow, bool autoStart = true, bool enableSpectrum = true,
+                             std::shared_ptr<AudioOutput> audioOutput = {});
     ~PlaybackSession() override;
     void Open(const std::filesystem::path&, std::uint64_t) override;
     void OpenSource(const PlaybackSource&, std::uint64_t) override;

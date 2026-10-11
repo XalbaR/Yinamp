@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
 #include "platform/windows/windowing/Window.h"
@@ -143,6 +144,7 @@ BOOL CALLBACK FindMainWindow(HWND handle, LPARAM parameter) {
 } // namespace
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         using namespace yinamp;
         CheckClassicGeometry();
         ui::MainWindowInteraction model;

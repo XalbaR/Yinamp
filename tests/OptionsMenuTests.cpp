@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
 #include "skin/SkinLoader.h"
@@ -223,6 +224,7 @@ void CheckModel() {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         CheckModel();
         platform::ComApartment apartment;
         graphics::BitmapLoader loader;

@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "TemporaryMediaRoot.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -28,22 +29,16 @@ std::wstring Text(HWND hwnd) {
     return text;
 }
 std::vector<std::uint8_t> Snapshot(HWND hwnd, const std::string& filename = {}) {
-    RECT rect{};
-    GetClientRect(hwnd, &rect);
-    const int width = rect.right, height = rect.bottom;
-    const auto dc = GetDC(hwnd), copy = CreateCompatibleDC(dc);
-    const auto bitmap = CreateCompatibleBitmap(dc, width, height);
-    const auto old = SelectObject(copy, bitmap);
-    BitBlt(copy, 0, 0, width, height, dc, 0, 0, SRCCOPY);
-    SelectObject(copy, old);
+    const auto capture = static_cast<const graphics::Bitmap*>(GetPropW(hwnd, L"OffscreenCapture"));
+    Check(capture && !capture->pixels.empty(), "Offscreen URL frame rendered");
+    const int width = capture->size.width, height = capture->size.height;
     BITMAPINFO info{};
     info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     info.bmiHeader.biWidth = width;
     info.bmiHeader.biHeight = -height;
     info.bmiHeader.biPlanes = 1;
     info.bmiHeader.biBitCount = 32;
-    std::vector<std::uint8_t> pixels(static_cast<std::size_t>(width * height * 4));
-    GetDIBits(copy, bitmap, 0, static_cast<UINT>(height), pixels.data(), &info, DIB_RGB_COLORS);
+    const auto& pixels = capture->pixels;
     BITMAPFILEHEADER header{};
     header.bfType = 0x4D42;
     header.bfOffBits = sizeof(header) + sizeof(info.bmiHeader);
@@ -54,9 +49,6 @@ std::vector<std::uint8_t> Snapshot(HWND hwnd, const std::string& filename = {}) 
         file.write(reinterpret_cast<const char*>(&info.bmiHeader), sizeof(info.bmiHeader));
         file.write(reinterpret_cast<const char*>(pixels.data()), static_cast<std::streamsize>(pixels.size()));
     }
-    DeleteObject(bitmap);
-    DeleteDC(copy);
-    ReleaseDC(hwnd, dc);
     return pixels;
 }
 struct Scenario {
@@ -302,6 +294,7 @@ void CALLBACK FindDialog(HWND hwnd, UINT, UINT_PTR id, DWORD) noexcept {
 }
 int main(int argc, char* argv[]) {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         ParserAndModel(temporary.path / L"parser");
@@ -342,8 +335,9 @@ int main(int argc, char* argv[]) {
                 SetFocus(main.Playlist().Handle());
                 if (mode == 9)
                     EnableWindow(main.Equalizer().Handle(), FALSE);
+                auto capture = std::make_shared<graphics::Bitmap>();
                 ui::YouTubeUrlWindow dialog(GetModuleHandleW(nullptr), main.Playlist().Handle(), assets,
-                                            core::IntegerScale{scale}, model);
+                                            core::IntegerScale{scale}, model, {}, {}, {}, {}, capture);
                 Scenario test;
                 test.dialog = dialog.Handle();
                 test.main = main.Handle();
@@ -355,15 +349,16 @@ int main(int argc, char* argv[]) {
                 test.unrelated = unrelated;
                 test.snapshot = snapshots && (mode == 0 || mode == 2 || mode == 3);
                 SetPropW(test.dialog, L"YouTubeUrlTest", &test);
+                SetPropW(test.dialog, L"OffscreenCapture", capture.get());
                 Check(SetTimer(test.dialog, 1, 60, Exercise) != 0, "Test timer");
                 const auto added = dialog.Run();
                 if (mode == 10) {
-                    MSG quit{};
-                    Check(PeekMessageW(&quit, nullptr, WM_QUIT, WM_QUIT, PM_REMOVE) && quit.wParam == 7,
-                          "Modal preserves WM_QUIT exit code");
+                    if (test.failure) std::rethrow_exception(test.failure);
+                    yinamp::test::RequireQuit(7);
                 }
                 KillTimer(test.dialog, 1);
                 RemovePropW(test.dialog, L"YouTubeUrlTest");
+                RemovePropW(test.dialog, L"OffscreenCapture");
                 if (test.failure)
                     std::rethrow_exception(test.failure);
                 Check(test.tick > 0, "Scenario exercised");

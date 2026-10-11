@@ -9,6 +9,7 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8 OR NOT CMAKE_GENERATOR_PLATFORM STREQUAL "x64
 endif()
 
 include(CTest)
+option(YINAMP_INTERACTIVE_VALIDATION "Validate playback with a real system audio endpoint" OFF)
 set(YINAMP_SKIN_DIRECTORY "${PROJECT_SOURCE_DIR}/assets/skins/classic" CACHE PATH "Compatible loose skin atlas directory")
 configure_file(src/app/BuildPaths.h.in generated/app/BuildPaths.h @ONLY)
 
@@ -283,4 +284,30 @@ if(BUILD_TESTING)
     add_dependencies(yinamp_startup_test Yinamp)
     add_test(NAME missing_skin_startup COMMAND yinamp_startup_test "$<TARGET_FILE:Yinamp>")
     set_tests_properties(missing_skin_startup PROPERTIES TIMEOUT 20 SKIP_RETURN_CODE 77 RUN_SERIAL TRUE)
+
+    # Labels describe coverage; the hosted workflow still runs every registered test.
+    get_property(yinamp_tests DIRECTORY PROPERTY TESTS)
+    set_tests_properties(${yinamp_tests} PROPERTIES LABELS "unit")
+    set_tests_properties(classic_popup windows_application_identity hidden_content_reset
+        downloaded_media_library classic_track_info playlist_display_name classic_youtube_playlist_dialog
+        classic_youtube_batch_result classic_playlist_add_file classic_youtube_url_input
+        classic_interaction_parity classic_options_menu classic_startup_layout classic_playlist
+        classic_equalizer classic_main_window windows_graphics_smoke
+        PROPERTIES LABELS "integration;ui")
+    set_tests_properties(youtube_metadata online_playback youtube_playlist_import youtube_batch_import
+        playlist_session native_http_transport native_media_pipeline missing_skin_startup
+        PROPERTIES LABELS "integration")
+    set_property(TEST native_playback_integration equalizer_transform APPEND PROPERTY LABELS "integration;playback")
+    set_property(TEST equalizer_dsp audio_spectrum native_playback_controller APPEND PROPERTY LABELS "playback")
+    set_tests_properties(native_playback_ui PROPERTIES LABELS "integration;ui;playback")
+    set_property(TEST hidden_content_reset downloaded_media_library classic_playlist_add_file
+        APPEND PROPERTY LABELS "playback")
+    if(YINAMP_INTERACTIVE_VALIDATION)
+        foreach(target yinamp_playback_integration_tests yinamp_playback_ui_tests yinamp_content_reset_tests
+                       yinamp_library_tests yinamp_playlist_add_file_tests)
+            target_compile_definitions(${target} PRIVATE YINAMP_TEST_REAL_AUDIO=1)
+        endforeach()
+        set_property(TEST native_playback_integration native_playback_ui hidden_content_reset
+            downloaded_media_library classic_playlist_add_file APPEND PROPERTY LABELS "interactive")
+    endif()
 endif()

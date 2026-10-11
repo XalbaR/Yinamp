@@ -109,6 +109,7 @@ class Callback final : public IMFAsyncCallback {
 }
 struct PlaybackSession::Impl {
     HWND hwnd;
+    std::shared_ptr<AudioOutput> outputAdapter;
     std::shared_ptr<Inbox> inbox{std::make_shared<Inbox>()};
     std::mutex viewMutex;
     Snapshot view;
@@ -145,7 +146,8 @@ struct PlaybackSession::Impl {
     HRESULT startupResult{E_FAIL};
     bool hasAudio{}, pausedSeekMute{}, pausePending{};
     TOPOID audioSourceNode{};
-    explicit Impl(HWND window, bool start, bool spectrum) : hwnd(window), enableSpectrum(spectrum), autoStart(start) {
+    explicit Impl(HWND window, bool start, bool spectrum, std::shared_ptr<AudioOutput> output)
+        : hwnd(window), outputAdapter(std::move(output)), enableSpectrum(spectrum), autoStart(start) {
         worker = std::thread([this] { Run(); });
     }
     ~Impl() {
@@ -441,7 +443,11 @@ struct PlaybackSession::Impl {
             Check(presentation->SelectStream(i));
             ComPtr<IMFActivate> renderer;
             if (useAudio) {
-                Check(MFCreateAudioRendererActivate(&renderer));
+                ComPtr<IMFMediaType> sourceType;
+                if (outputAdapter && FAILED(handler->GetCurrentMediaType(&sourceType)))
+                    Check(handler->GetMediaTypeByIndex(0, &sourceType));
+                Check(outputAdapter ? outputAdapter->CreateRenderer(sourceType.Get(), &renderer)
+                                  : MFCreateAudioRendererActivate(&renderer));
                 audio = true;
             } else {
                 Check(MFCreateVideoRendererActivate(hwnd, &renderer));
@@ -546,7 +552,8 @@ struct PlaybackSession::Impl {
             }
             // Video-only presentations legitimately have no audio service.
             if (hasAudio)
-                Check(MFGetService(session.Get(), MR_STREAM_VOLUME_SERVICE, IID_PPV_ARGS(&volumeService)));
+                Check(outputAdapter ? outputAdapter->VolumeService(session.Get(), &volumeService)
+                                  : MFGetService(session.Get(), MR_STREAM_VOLUME_SERVICE, IID_PPV_ARGS(&volumeService)));
             ApplyAudio();
             if (wantPlaying)
                 {
@@ -753,8 +760,8 @@ struct PlaybackSession::Impl {
             CoUninitialize();
     }
 };
-PlaybackSession::PlaybackSession(HWND window, bool autoStart, bool enableSpectrum)
-    : impl_(std::make_unique<Impl>(window, autoStart, enableSpectrum)) {}
+PlaybackSession::PlaybackSession(HWND window, bool autoStart, bool enableSpectrum, std::shared_ptr<AudioOutput> output)
+    : impl_(std::make_unique<Impl>(window, autoStart, enableSpectrum, std::move(output))) {}
 PlaybackSession::~PlaybackSession() = default;
 void PlaybackSession::Shutdown() {
     impl_->Shutdown();

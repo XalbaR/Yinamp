@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
 #include "skin/SkinLoader.h"
@@ -25,6 +26,7 @@ int Selected(const yinamp::ui::PlaylistInteraction& state) {
 }
 int main(int argc, char* argv[]) {
     try {
+        yinamp::test::WindowFixture windowFixture;
         using namespace yinamp;
         // Görsel deneme yalnızca test yürütülebilirinde açılır; ürün başlangıcına sahte içerik eklenmez.
         if (argc == 2 && std::string_view(argv[1]) == "--preview") {

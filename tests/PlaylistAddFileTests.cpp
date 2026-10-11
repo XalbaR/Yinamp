@@ -1,3 +1,5 @@
+#include "WindowFixture.h"
+#include "PlaybackOutput.h"
 #include "TemporaryMediaRoot.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -46,13 +48,14 @@ void Wav(const std::filesystem::path& path) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         platform::ComApartment apartment;
         TemporaryMediaRoot temporary;
         graphics::BitmapLoader loader;
         graphics::Renderer renderer;
         ui::MainWindow main(GetModuleHandleW(nullptr), skin::SkinLoader{}.Load(app::DefaultSkinDirectory, loader),
                             renderer, core::IntegerScale{1}, temporary.path / L"media", false, {},
-                            temporary.path / L"session");
+                            temporary.path / L"session", {}, {}, {}, yinamp::test::PlaybackOutput());
         ShowWindow(main.Handle(), SW_SHOWNOACTIVATE);
         auto& window = main.Playlist();
         auto& model = window.Model();

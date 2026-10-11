@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "platform/windows/WindowsRuntime.h"
 #include "skin/SkinLoader.h"
@@ -142,6 +143,7 @@ void CheckMagneticDocking(yinamp::ui::MainWindow& main, int factor) {
 }
 int main() {
     try {
+        yinamp::test::WindowFixture windowFixture;
         using namespace yinamp;
         platform::ComApartment apartment;
         graphics::BitmapLoader loader;

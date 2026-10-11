@@ -1,3 +1,4 @@
+#include "WindowFixture.h"
 #include "app/BuildPaths.h"
 #include "app/resource.h"
 #include "platform/windows/WindowsRuntime.h"
@@ -117,6 +118,7 @@ void TestTrayFailures(HICON icon, HWND mainOwner) {
 }
 int wmain(int argc, wchar_t** argv) {
     try {
+        yinamp::test::WindowFixture windowFixture;
         Check(argc == 2, "Expected Yinamp executable path");
         platform::InitializeApplicationIdentity();
         PWSTR identity{};
