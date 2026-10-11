@@ -148,7 +148,9 @@ Windows 10 22H2 or Windows 11, x64, with Media Foundation. Windows N editions ne
 
 ## Quick start
 
-Build from source using [Getting started](docs/GETTING_STARTED.md), then run `build/windows-x64-app/Debug/Yinamp.exe`. Eject opens local media; Playlist **ADD URL** accepts a YouTube video or public playlist. **EQ**, **PL** and **V** toggle auxiliary windows. There is no public binary release yet.
+Download `Yinamp-0.1.0-windows-x64.zip` from [Yinamp 0.1.0](https://github.com/XalbaR/Yinamp/releases/tag/v0.1.0), extract the entire ZIP and run `Yinamp.exe`. Keep `assets` beside the executable. The portable Release build uses the static MSVC runtime; no separate VC++ Redistributable is required.
+
+To build from source, follow [Getting started](docs/GETTING_STARTED.md). Eject opens local media; Playlist **ADD URL** accepts a YouTube video or public playlist. **EQ**, **PL** and **V** toggle auxiliary windows.
 
 Data is written beneath `%LOCALAPPDATA%/Yinamp`; downloads go to the Windows Music known folder under `YINAMP/<videoId>`. Playlist sessions and exports may contain personal paths and viewing information. See [Storage](docs/STORAGE.md).
 

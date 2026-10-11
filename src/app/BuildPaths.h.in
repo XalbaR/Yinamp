@@ -2,5 +2,8 @@
 #include <string_view>
 
 namespace yinamp::app {
+#ifndef NDEBUG
+// Source-tree fallback is for Debug development and tests only.
 inline constexpr std::wstring_view DefaultSkinDirectory = LR"yinamp(@YINAMP_SKIN_DIRECTORY@)yinamp";
+#endif
 }

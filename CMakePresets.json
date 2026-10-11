@@ -7,6 +7,18 @@
   },
   "configurePresets": [
     {
+      "name": "windows-x64-release",
+      "displayName": "Visual Studio 2022 x64 portable Release app",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-x64-release",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Release",
+        "BUILD_TESTING": "OFF",
+        "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded"
+      }
+    },
+    {
       "name": "windows-x64-app",
       "displayName": "Visual Studio 2022 x64 Debug app",
       "generator": "Visual Studio 17 2022",
@@ -40,6 +52,11 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "release-app-x64",
+      "configurePreset": "windows-x64-release",
+      "configuration": "Release"
+    },
     {
       "name": "debug-app-x64",
       "configurePreset": "windows-x64-app",

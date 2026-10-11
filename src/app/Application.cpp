@@ -15,9 +15,14 @@ std::filesystem::path SkinDirectory() {
         throw std::runtime_error("Application directory unavailable.");
     executable.resize(length);
     const auto directory = std::filesystem::path(executable).parent_path() / L"assets";
-    // An installed package owns its assets. Development builds retain the configured source path.
+    // Release always owns executable-relative assets, including missing-asset diagnostics.
+#ifdef NDEBUG
+    return directory / L"skins" / L"classic";
+#else
+    // Debug development builds retain the configured source path.
     return std::filesystem::is_directory(directory) ? directory / L"skins" / L"classic"
                                                    : std::filesystem::path(DefaultSkinDirectory);
+#endif
 }
 }
 int Application::Run(HINSTANCE instance, int showCommand) {

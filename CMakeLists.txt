@@ -80,8 +80,14 @@ yinamp_configure(Yinamp)
 target_include_directories(Yinamp PRIVATE "${PROJECT_BINARY_DIR}/generated")
 target_link_libraries(Yinamp PRIVATE yinamp_ui)
 
-# A public binary release is a separate maintainer decision.
-# No binary install/CPack target is currently configured.
+# Keep portable app assets next to the Release executable. Debug retains its source fallback.
+if(CMAKE_CONFIGURATION_TYPES STREQUAL "Release")
+    add_custom_command(TARGET Yinamp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${PROJECT_SOURCE_DIR}/assets/skins/classic"
+            "$<TARGET_FILE_DIR:Yinamp>/assets/skins/classic"
+        COMMENT "Copy bundled Classic skin beside Yinamp")
+endif()
 
 if(BUILD_TESTING)
     add_executable(yinamp_classic_popup_tests tests/ClassicPopupMenuTests.cpp src/app/Yinamp.manifest)
